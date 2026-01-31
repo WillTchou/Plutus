@@ -31,9 +31,12 @@ public class Transaction {
     @Column
     @Enumerated(EnumType.STRING)
     private TransactionStatus status = TransactionStatus.PENDING;
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Account account;
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "source_account_id", referencedColumnName = "id")
+    private Account sourceAccount;
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "target_account_id", referencedColumnName = "id")
+    private Account targetAccount;
     @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
     @JsonIgnore
     private IdempotencyKey idempotencyKey;
