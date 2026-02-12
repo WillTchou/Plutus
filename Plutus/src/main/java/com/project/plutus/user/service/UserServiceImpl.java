@@ -3,6 +3,7 @@ package com.project.plutus.user.service;
 import com.project.plutus.exceptions.EmailAlreadyExistsException;
 import com.project.plutus.exceptions.UserDoesNotExistException;
 import com.project.plutus.user.mapper.UserMapper;
+import com.project.plutus.user.model.KycState;
 import com.project.plutus.user.model.User;
 import com.project.plutus.user.model.UserDTO;
 import com.project.plutus.user.repository.UserRepository;
@@ -27,8 +28,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO getUserById(final String userId) {
-        return userRepository.findById(UUID.fromString(userId))
+    public UserDTO getUserById(final UUID userId) {
+        return userRepository.findById(userId)
                 .map(userMapper::toUserDTO)
                 .orElseThrow(UserDoesNotExistException::new);
     }
@@ -55,6 +56,15 @@ public class UserServiceImpl implements UserService {
                 .ifPresentOrElse(userToUpdate -> {
                     userMapper.mapUpdateUser(updatedUser, userToUpdate, passwordEncoder);
                     userRepository.save(userToUpdate);
+                }, UserDoesNotExistException::new);
+    }
+
+    @Override
+    public void verifyUser(final String userId) {
+        userRepository.findById(UUID.fromString(userId))
+                .ifPresentOrElse(user -> {
+                    user.setKycState(KycState.VERIFIED);
+                    userRepository.save(user);
                 }, UserDoesNotExistException::new);
     }
 }

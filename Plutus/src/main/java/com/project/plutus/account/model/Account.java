@@ -1,11 +1,14 @@
 package com.project.plutus.account.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.project.plutus.beneficiary.model.Beneficiary;
 import com.project.plutus.model.Currency;
 import com.project.plutus.transaction.model.Transaction;
 import com.project.plutus.user.model.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +18,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "accounts")
 @Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class Account {
     @Id
@@ -30,7 +35,8 @@ public class Account {
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
     @Column(nullable = false)
-    private Double balance;
+    @Builder.Default
+    private Double balance = 0.00;
     @Column
     @Enumerated(EnumType.STRING)
     private Currency currency = Currency.EUR;
@@ -43,7 +49,7 @@ public class Account {
     @OneToMany(mappedBy = "sourceAccount", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<Transaction> transactionsSources;
-    @OneToMany(mappedBy = "targetAccount", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     @JsonIgnore
-    private Set<Transaction> transactionsTargets;
+    private Set<Beneficiary> beneficiaries;
 }

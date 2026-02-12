@@ -3,6 +3,8 @@ package com.project.plutus.transaction.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.plutus.account.model.Account;
+import com.project.plutus.beneficiary.model.Beneficiary;
+import com.project.plutus.model.Currency;
 import com.project.plutus.model.IdempotencyKey;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -23,6 +25,10 @@ public class Transaction {
     @Column(nullable = false)
     private Double amount;
     @Column(nullable = false)
+    private Currency currency = Currency.EUR;
+    @Column
+    private String motive;
+    @Column(nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
     @Column(nullable = false)
@@ -35,8 +41,8 @@ public class Transaction {
     @JoinColumn(name = "source_account_id", referencedColumnName = "id")
     private Account sourceAccount;
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "target_account_id", referencedColumnName = "id")
-    private Account targetAccount;
+    @JoinColumn(name = "beneficiary_id", referencedColumnName = "id")
+    private Beneficiary beneficiary;
     @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
     @JsonIgnore
     private IdempotencyKey idempotencyKey;

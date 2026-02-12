@@ -3,6 +3,7 @@ package com.project.plutus.user.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.plutus.account.model.Account;
+import com.project.plutus.beneficiary.model.Beneficiary;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -90,7 +91,7 @@ public class User implements UserDetails {
 
     public User(@NonNull final String firstname,@NonNull final String lastname,@NonNull final String birthDate,
                 @NonNull final String email, @NonNull final String password, final Role role) {
-        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MMM-dd");
+        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         this.firstname = firstname;
         this.lastname = lastname;
         this.birthDate = LocalDate.parse(birthDate, dateTimeFormatter);

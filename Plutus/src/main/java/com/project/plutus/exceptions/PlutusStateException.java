@@ -1,6 +1,6 @@
 package com.project.plutus.exceptions;
 
-public class PlutusStateException extends RuntimeException{
+public class PlutusStateException extends RuntimeException {
     protected final String code;
     protected final String message;
 
