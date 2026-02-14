@@ -105,6 +105,3 @@ Design principles:
 - GitHub Actions (CI)
 
 ---
-
-## 📦 Project Structure
-

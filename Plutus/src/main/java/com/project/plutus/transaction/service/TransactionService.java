@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface TransactionService {
-    TransactionDTO getTransactionById(UUID transactionId, UUID accountId);
+    TransactionDTO getTransactionById(UUID transactionId, String userEmail);
 
-    Page<TransactionDTO> getTransactions(UUID accountId, Pageable pageable);
+    Page<TransactionDTO> getTransactions(UUID accountId, String userEmail,Pageable pageable);
 
     Transaction createTransaction(Transaction transaction);
 }

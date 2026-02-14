@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -20,14 +21,17 @@ public class TransactionController {
     }
 
     @GetMapping(path = "/{id}")
-    public ResponseEntity<TransactionDTO> getTransactionById(@RequestHeader(name = "accountId") final UUID accountId,
-                                                             @PathVariable("id") final UUID transactionId) {
-        return ResponseEntity.ok(transactionService.getTransactionById(transactionId, accountId));
+    public ResponseEntity<TransactionDTO> getTransactionById(@PathVariable("id") final UUID transactionId,
+                                                             final Authentication authentication) {
+        final String userEmail = authentication.getName();
+        return ResponseEntity.ok(transactionService.getTransactionById(transactionId, userEmail));
     }
 
     @GetMapping
     public ResponseEntity<Page<TransactionDTO>> getTransactions(@RequestHeader(name = "accountId") final UUID accountId,
-                                                                @PageableDefault final Pageable pageable) {
-        return ResponseEntity.ok(transactionService.getTransactions(accountId, pageable));
+                                                                @PageableDefault final Pageable pageable,
+                                                                final Authentication authentication) {
+        final String userEmail = authentication.getName();
+        return ResponseEntity.ok(transactionService.getTransactions(accountId, userEmail, pageable));
     }
 }
