@@ -81,7 +81,7 @@ Design principles:
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Java 24**
+- **Java 21**
 - **Spring Boot**
 - Spring Web
 - Spring Data JPA
