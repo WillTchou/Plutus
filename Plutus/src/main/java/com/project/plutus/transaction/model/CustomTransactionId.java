@@ -1,9 +1,9 @@
-package com.project.plutus.model;
+package com.project.plutus.transaction.model;
 
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.id.IdentifierGenerator;
 
-public class CustomIdempotenceyKey implements IdentifierGenerator {
+public class CustomTransactionId implements IdentifierGenerator {
 
     private static int counter = 1;
 

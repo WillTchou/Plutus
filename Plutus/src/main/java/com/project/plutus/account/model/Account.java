@@ -2,6 +2,7 @@ package com.project.plutus.account.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.plutus.beneficiary.model.Beneficiary;
+import com.project.plutus.ledger.model.LedgerEntry;
 import com.project.plutus.model.Currency;
 import com.project.plutus.transaction.model.Transaction;
 import com.project.plutus.user.model.User;

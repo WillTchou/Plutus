@@ -1,21 +1,27 @@
-package com.project.plutus.account.model;
+package com.project.plutus.ledger.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.project.plutus.account.model.Account;
+import com.project.plutus.model.Currency;
 import com.project.plutus.transaction.model.TransactionType;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ledger_entries")
 @Getter
+@Setter
 public class LedgerEntry {
     @Id
     @Column(unique = true, nullable = false)
     private Long id;
     @Column(nullable = false)
     private Double amount;
+    @Column(nullable = false)
+    private Currency currency;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private TransactionType transactionType;

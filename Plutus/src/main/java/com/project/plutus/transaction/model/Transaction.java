@@ -1,17 +1,14 @@
 package com.project.plutus.transaction.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.plutus.account.model.Account;
 import com.project.plutus.beneficiary.model.Beneficiary;
 import com.project.plutus.model.Currency;
-import com.project.plutus.model.IdempotencyKey;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "transactions")
@@ -19,9 +16,11 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Transaction {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(unique = true, nullable = false)
-    private UUID id;
+    @TransactionId
+    @Column(nullable = false, unique = true)
+    private String id;
+    @Column(nullable = false, unique = true)
+    private String idempotencyKey;
     @Column(nullable = false)
     private Double amount;
     @Column(nullable = false)
@@ -43,7 +42,4 @@ public class Transaction {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "beneficiary_id", referencedColumnName = "id")
     private Beneficiary beneficiary;
-    @OneToOne(mappedBy = "transaction", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private IdempotencyKey idempotencyKey;
 }

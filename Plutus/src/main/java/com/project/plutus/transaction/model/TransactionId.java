@@ -1,4 +1,4 @@
-package com.project.plutus.model;
+package com.project.plutus.transaction.model;
 
 import org.hibernate.annotations.IdGeneratorType;
 
@@ -9,8 +9,8 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 
-@IdGeneratorType(CustomIdempotenceyKey.class)
+@IdGeneratorType(CustomTransactionId.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ FIELD, METHOD})
-public @interface IdempotencyId {
+public @interface TransactionId {
 }

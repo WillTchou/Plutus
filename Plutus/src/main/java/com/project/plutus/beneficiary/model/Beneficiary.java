@@ -5,6 +5,8 @@ import com.project.plutus.account.model.Account;
 import com.project.plutus.transaction.model.Transaction;
 import com.project.plutus.user.model.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +16,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "beneficiaries")
 @Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class Beneficiary {
     @Id

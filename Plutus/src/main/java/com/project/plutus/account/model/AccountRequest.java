@@ -13,6 +13,6 @@ import lombok.Value;
 public class AccountRequest {
     String holderName;
     String iban;
-    Double amount;
+    double initialDepositAmount;
     Currency currency;
 }

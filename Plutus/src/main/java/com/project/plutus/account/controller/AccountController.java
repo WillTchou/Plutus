@@ -3,6 +3,7 @@ package com.project.plutus.account.controller;
 import com.project.plutus.account.model.AccountDTO;
 import com.project.plutus.account.model.AccountRequest;
 import com.project.plutus.account.service.AccountService;
+import jakarta.annotation.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,9 +24,10 @@ public class AccountController {
     @PostMapping
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<Void> createAccount(@RequestBody final AccountRequest accountRequest,
+                                              @RequestHeader @Nullable final String idempotencyKey,
                                               final Authentication authentication) {
         final String userEmail = authentication.getName();
-        accountService.createAccountForUser(userEmail, accountRequest);
+        accountService.createAccountForUser(userEmail, accountRequest, idempotencyKey);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 

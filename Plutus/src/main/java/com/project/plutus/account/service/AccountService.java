@@ -6,6 +6,6 @@ import com.project.plutus.account.model.AccountRequest;
 import java.util.UUID;
 
 public interface AccountService {
-    void createAccountForUser(String userEmail, AccountRequest accountRequest);
+    void createAccountForUser(String userEmail, AccountRequest accountRequest, String idempotencyKey);
     AccountDTO getAccountById(UUID accountId, String userEmail);
 }
