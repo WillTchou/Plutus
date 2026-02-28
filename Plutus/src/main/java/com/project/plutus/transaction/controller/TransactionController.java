@@ -1,7 +1,9 @@
 package com.project.plutus.transaction.controller;
 
 import com.project.plutus.transaction.model.TransactionDTO;
+import com.project.plutus.transaction.model.TransactionRequest;
 import com.project.plutus.transaction.service.TransactionService;
+import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -37,10 +39,12 @@ public class TransactionController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> createTransaction(@RequestBody final TransactionDTO transactionDTO,
+    public ResponseEntity<Void> createTransaction(@RequestHeader(name = "accountId") @NonNull final UUID accountId,
+                                                  @RequestHeader(name = "idempotencyKey") @NonNull final String idempotencyKey,
+                                                  @RequestBody @NonNull final TransactionRequest transactionRequest,
                                                   final Authentication authentication) {
         final String userEmail = authentication.getName();
-        //transactionService.createTransaction(transactionDTO, userEmail);
+        transactionService.createTransaction(accountId, idempotencyKey, userEmail, transactionRequest);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 }

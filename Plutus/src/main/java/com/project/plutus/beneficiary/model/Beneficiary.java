@@ -3,7 +3,6 @@ package com.project.plutus.beneficiary.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.project.plutus.account.model.Account;
 import com.project.plutus.transaction.model.Transaction;
-import com.project.plutus.user.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

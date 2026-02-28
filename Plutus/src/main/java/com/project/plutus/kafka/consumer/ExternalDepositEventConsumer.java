@@ -3,6 +3,7 @@ package com.project.plutus.kafka.consumer;
 import com.project.plutus.account.model.Account;
 import com.project.plutus.beneficiary.model.Beneficiary;
 import com.project.plutus.exceptions.NotEnoughAmountException;
+import com.project.plutus.kafka.model.KafkaTopics;
 import com.project.plutus.kafka.model.AccountDepositEvent;
 import com.project.plutus.kafka.model.LedgerEntryEvent;
 import com.project.plutus.kafka.producer.KafkaEventProducer;
@@ -21,9 +22,6 @@ import java.util.UUID;
 @Component
 @Slf4j
 public class ExternalDepositEventConsumer extends KafkaEventProducer<LedgerEntryEvent> implements KafkaEventConsumer<AccountDepositEvent> {
-    private static final String LEDGER_ENTRY_EVENTS = "ledger-entry-events";
-    private static final String EXTERNAL_DEPOSIT_EVENTS = "external-deposit-events";
-
     private final TransactionRepository transactionRepository;
 
     public ExternalDepositEventConsumer(KafkaTemplate<String, LedgerEntryEvent> kafkaTemplate,
@@ -33,7 +31,7 @@ public class ExternalDepositEventConsumer extends KafkaEventProducer<LedgerEntry
     }
 
     @Override
-    @KafkaListener(topics = EXTERNAL_DEPOSIT_EVENTS, groupId = "plutus-group")
+    @KafkaListener(topics = KafkaTopics.EXTERNAL_DEPOSIT_EVENTS, groupId = "plutus-group")
     public void consumeMessage(AccountDepositEvent message) {
         log.info("Received external deposit event with id: {}", message.eventId());
         transactionRepository.findByIdempotencyKey(message.idempotencyKey())
@@ -44,28 +42,29 @@ public class ExternalDepositEventConsumer extends KafkaEventProducer<LedgerEntry
 
     private void processExternalDepositEvent(AccountDepositEvent message) {
             final var transaction = createExternalDepositTransaction(message, message.beneficiary(), message.account());
-            if (message.amount() >= 50) {
-                transaction.setAmount(message.amount());
-                final LedgerEntryEvent ledgerEntryEvent = new LedgerEntryEvent(UUID.randomUUID(), transaction);
-                log.info("Publishing ledger entry event to topic: {} for transaction id: {}", LEDGER_ENTRY_EVENTS, transaction.getId());
-                this.sendMessage(LEDGER_ENTRY_EVENTS, ledgerEntryEvent);
-            } else {
-                transaction.setStatus(TransactionStatus.FAILED);
+            if (message.amount() < 50) {
                 log.error("External deposit amount is less than 50, skipping transaction creation for event id: {}", message.eventId());
-                throw new NotEnoughAmountException();
+                transaction.setStatus(TransactionStatus.FAILED);
+                transactionRepository.save(transaction);
+                throw new NotEnoughAmountException(String.format("External deposit amount must be at least 50, but was: %f", message.amount()));
             }
+            final LedgerEntryEvent ledgerEntryEvent = new LedgerEntryEvent(UUID.randomUUID(), transaction, message.account(), message.beneficiary());
+            log.info("Publishing ledger entry event to topic: {} for transaction id: {}", KafkaTopics.LEDGER_ENTRY_EVENTS, transaction.getId());
+            this.sendMessage(KafkaTopics.LEDGER_ENTRY_EVENTS, ledgerEntryEvent);
     }
 
     private Transaction createExternalDepositTransaction(final AccountDepositEvent message,
                                                          final Beneficiary beneficiary,
                                                          final Account sourceAccount) {
-        Transaction transaction = new Transaction();
-        transaction.setBeneficiary(beneficiary);
-        transaction.setSourceAccount(sourceAccount);
-        transaction.setMotive("External deposit");
-        transaction.setCreatedAt(LocalDateTime.now());
-        transaction.setTransactionType(TransactionType.CREDIT);
-        transaction.setIdempotencyKey(message.idempotencyKey());
+        final Transaction transaction = Transaction.builder()
+                .beneficiary(beneficiary)
+                .sourceAccount(sourceAccount)
+                .motive("External deposit")
+                .amount(message.amount())
+                .createdAt(LocalDateTime.now())
+                .transactionType(TransactionType.CREDIT)
+                .idempotencyKey(message.idempotencyKey())
+                .build();
         return transactionRepository.save(transaction);
     }
 }

@@ -1,9 +1,17 @@
 package com.project.plutus.transaction.service;
 
+import com.project.plutus.account.model.Account;
+import com.project.plutus.account.repository.AccountRepository;
+import com.project.plutus.beneficiary.model.Beneficiary;
+import com.project.plutus.beneficiary.repository.BeneficiaryRepository;
+import com.project.plutus.exceptions.AccountNotFoundException;
 import com.project.plutus.exceptions.TransactionNotFoundException;
+import com.project.plutus.kafka.model.PaymentEvent;
+import com.project.plutus.kafka.producer.PaymentProcessorEventProducer;
 import com.project.plutus.transaction.mapper.TransactionMapper;
 import com.project.plutus.transaction.model.Transaction;
 import com.project.plutus.transaction.model.TransactionDTO;
+import com.project.plutus.transaction.model.TransactionRequest;
 import com.project.plutus.transaction.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -12,6 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -21,6 +30,9 @@ import java.util.function.Function;
 public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
+    private final AccountRepository accountRepository;
+    private final BeneficiaryRepository beneficiaryRepository;
+    private final PaymentProcessorEventProducer paymentProcessorEventProducer;
 
     @Override
     public TransactionDTO getTransactionById(final UUID transactionId, final String userEmail) {
@@ -45,8 +57,15 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Transaction createTransaction(Transaction transaction) {
-        return null;
+    public void createTransaction(UUID accountId, String idempotencyKey, String userEmail,
+                                  TransactionRequest transactionRequest) {
+        final Account sourceAccount = accountRepository.findByIdAndUserEmail(accountId, userEmail)
+                .orElseThrow(AccountNotFoundException::new);
+        final Beneficiary beneficiary = beneficiaryRepository.findById(transactionRequest.getBeneficiaryId())
+                .orElseThrow(AccountNotFoundException::new);
+        final PaymentEvent paymentEvent = new PaymentEvent(UUID.randomUUID(), Instant.now(), sourceAccount, beneficiary,
+                transactionRequest.getMotive(), transactionRequest.getAmount(), idempotencyKey);
+        paymentProcessorEventProducer.sendPaymentEvent(paymentEvent);
     }
 
     private static @NonNull Function<Transaction, Transaction> getTransactionForAuthenticatedUser(final String userEmail) {

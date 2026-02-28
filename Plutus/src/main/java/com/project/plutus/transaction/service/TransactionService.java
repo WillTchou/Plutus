@@ -2,6 +2,7 @@ package com.project.plutus.transaction.service;
 
 import com.project.plutus.transaction.model.Transaction;
 import com.project.plutus.transaction.model.TransactionDTO;
+import com.project.plutus.transaction.model.TransactionRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,5 +13,5 @@ public interface TransactionService {
 
     Page<TransactionDTO> getTransactions(UUID accountId, String userEmail,Pageable pageable);
 
-    Transaction createTransaction(Transaction transaction);
+    void createTransaction(UUID accountId, String idempotencyKey, String userEmail, TransactionRequest transactionRequest);
 }
