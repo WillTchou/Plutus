@@ -3,6 +3,7 @@ package com.project.plutus.user.controller;
 import com.project.plutus.user.model.UserDTO;
 import com.project.plutus.user.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -16,14 +17,16 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping(path = "/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable("id") final UUID userId) {
-        return ResponseEntity.ok(userService.getUserById(userId));
+    @GetMapping
+    public ResponseEntity<UserDTO> getAuthedUser(final Authentication authentication) {
+        final String userEmail = authentication.getName();
+        return ResponseEntity.ok(userService.getAuthedUser(userEmail));
     }
 
-    @PostMapping(path = "/{id}")
-    public ResponseEntity<Void> verifyUser(@PathVariable("id") final String userId) {
-        userService.verifyUser(userId);
+    @PostMapping
+    public ResponseEntity<Void> verifyUser(final Authentication authentication) {
+        final String userEmail = authentication.getName();
+        userService.verifyUser(userEmail);
         return ResponseEntity.noContent().build();
     }
 }

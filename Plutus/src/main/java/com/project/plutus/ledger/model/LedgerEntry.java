@@ -6,29 +6,34 @@ import com.project.plutus.model.Currency;
 import com.project.plutus.transaction.model.TransactionType;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ledger_entries")
 @Getter
-@Setter
-public class LedgerEntry {
+public final class LedgerEntry {
     @Id
     @Column(unique = true, nullable = false)
     private Long id;
     @Column(nullable = false)
-    private Double amount;
+    private final Double amount;
     @Column(nullable = false)
-    private Currency currency;
+    private final Currency currency;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private TransactionType transactionType;
+    private final TransactionType transactionType;
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "account_id", referencedColumnName = "id")
-    private Account account;
+    private final Account account;
     @Column(nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdAt;
+    private final LocalDateTime createdAt = LocalDateTime.now();
+
+    public LedgerEntry(final Double amount, final Currency currency, final TransactionType transactionType, final Account account) {
+        this.amount = amount;
+        this.currency = currency;
+        this.transactionType = transactionType;
+        this.account = account;
+    }
 }

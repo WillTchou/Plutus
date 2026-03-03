@@ -22,7 +22,7 @@ public class AccountController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Void> createAccount(@RequestBody final AccountRequest accountRequest,
                                               @RequestHeader @Nullable final String idempotencyKey,
                                               final Authentication authentication) {
@@ -32,7 +32,7 @@ public class AccountController {
     }
 
     @GetMapping(path = "/{id}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<AccountDTO> getAccountById(@PathVariable("id") final UUID accountId,
                                                      final Authentication authentication) {
         final String userEmail = authentication.getName();

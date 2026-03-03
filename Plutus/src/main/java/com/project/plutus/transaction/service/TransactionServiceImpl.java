@@ -2,8 +2,8 @@ package com.project.plutus.transaction.service;
 
 import com.project.plutus.account.model.Account;
 import com.project.plutus.account.repository.AccountRepository;
+import com.project.plutus.beneficiary.BeneficiaryService;
 import com.project.plutus.beneficiary.model.Beneficiary;
-import com.project.plutus.beneficiary.repository.BeneficiaryRepository;
 import com.project.plutus.exceptions.AccountNotFoundException;
 import com.project.plutus.exceptions.TransactionNotFoundException;
 import com.project.plutus.kafka.model.PaymentEvent;
@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,11 +32,11 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final AccountRepository accountRepository;
-    private final BeneficiaryRepository beneficiaryRepository;
+    private final BeneficiaryService beneficiaryService;
     private final PaymentProcessorEventProducer paymentProcessorEventProducer;
 
     @Override
-    public TransactionDTO getTransactionById(final UUID transactionId, final String userEmail) {
+    public TransactionDTO getTransactionById(final String transactionId, final String userEmail) {
         return transactionRepository.findById(transactionId)
                 .map(getTransactionForAuthenticatedUser(userEmail))
                 .map(transactionMapper::toTransactionDTO)
@@ -44,6 +45,9 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Page<TransactionDTO> getTransactions(final UUID accountId, final String userEmail, final Pageable pageable) {
+        if(pageable.getOffset() < 0 || pageable.getPageSize() <= 0 || pageable.getOffset() > pageable.getPageSize()) {
+            throw new IndexOutOfBoundsException("Invalid pagination parameters: offset must be non-negative, page size must be greater than zero, and offset must not exceed page size.");
+        }
         final List<Transaction> transactions = transactionRepository.findAllBySourceAccountIdOrBeneficiaryAccountId(accountId)
                 .stream()
                 .map(getTransactionForAuthenticatedUser(userEmail))
@@ -57,13 +61,13 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional
     public void createTransaction(UUID accountId, String idempotencyKey, String userEmail,
                                   TransactionRequest transactionRequest) {
         final Account sourceAccount = accountRepository.findByIdAndUserEmail(accountId, userEmail)
                 .orElseThrow(AccountNotFoundException::new);
-        final Beneficiary beneficiary = beneficiaryRepository.findById(transactionRequest.getBeneficiaryId())
-                .orElseThrow(AccountNotFoundException::new);
-        final PaymentEvent paymentEvent = new PaymentEvent(UUID.randomUUID(), Instant.now(), sourceAccount, beneficiary,
+        final Beneficiary beneficiary = beneficiaryService.getBeneficiaryEntityById(transactionRequest.getBeneficiaryId());
+        final PaymentEvent paymentEvent = new PaymentEvent(UUID.randomUUID(), Instant.now(), sourceAccount.getId(), beneficiary.getId(),
                 transactionRequest.getMotive(), transactionRequest.getAmount(), idempotencyKey);
         paymentProcessorEventProducer.sendPaymentEvent(paymentEvent);
     }

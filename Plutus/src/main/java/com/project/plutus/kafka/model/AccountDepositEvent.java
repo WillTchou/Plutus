@@ -1,11 +1,8 @@
 package com.project.plutus.kafka.model;
 
-import com.project.plutus.account.model.Account;
-import com.project.plutus.beneficiary.model.Beneficiary;
-
 import java.time.Instant;
 import java.util.UUID;
 
-public record AccountDepositEvent(UUID eventId, Instant occurredAt, Account account, Beneficiary beneficiary,
+public record AccountDepositEvent(UUID eventId, Instant occurredAt, UUID sourceAccountId, UUID beneficiaryId,
                                   double amount, String idempotencyKey) {
 }

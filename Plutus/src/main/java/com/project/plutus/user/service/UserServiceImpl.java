@@ -28,8 +28,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO getUserById(final UUID userId) {
-        return userRepository.findById(userId)
+    public UserDTO getAuthedUser(final String userEmail) {
+        return userRepository.findUserByEmail(userEmail)
                 .map(userMapper::toUserDTO)
                 .orElseThrow(UserDoesNotExistException::new);
     }
@@ -37,7 +37,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserByEmail(final String email) {
         return userRepository.findUserByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(UserDoesNotExistException::new);
     }
 
     @Override
@@ -60,8 +60,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void verifyUser(final String userId) {
-        userRepository.findById(UUID.fromString(userId))
+    public void verifyUser(final String userEmail) {
+        userRepository.findUserByEmail(userEmail)
                 .ifPresentOrElse(user -> {
                     user.setKycState(KycState.VERIFIED);
                     userRepository.save(user);

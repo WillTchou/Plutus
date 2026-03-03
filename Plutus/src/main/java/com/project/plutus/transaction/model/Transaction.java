@@ -43,10 +43,10 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private TransactionStatus status = TransactionStatus.PENDING;
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "source_account_id", referencedColumnName = "id")
     private Account sourceAccount;
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "beneficiary_id", referencedColumnName = "id")
     private Beneficiary beneficiary;
 }

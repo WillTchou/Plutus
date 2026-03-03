@@ -10,9 +10,8 @@ import com.project.plutus.beneficiary.repository.BeneficiaryRepository;
 import com.project.plutus.exceptions.AccountNotFoundException;
 import com.project.plutus.kafka.model.AccountDepositEvent;
 import com.project.plutus.kafka.producer.ExternalDepositEventProducer;
-import com.project.plutus.user.repository.UserRepository;
+import com.project.plutus.user.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,15 +21,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final BeneficiaryRepository beneficiaryRepository;
     private final AccountMapper accountMapper;
     private final ExternalDepositEventProducer externalDepositEventProducer;
 
     @Override
     public void createAccountForUser(String userEmail, AccountRequest accountRequest, String idempotencyKey) {
-        final var user = userRepository.findUserByEmail(userEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        final var user = userService.getUserByEmail(userEmail);
         final var account = Account.builder()
                 .holderName(accountRequest.getHolderName())
                 .iban(accountRequest.getIban())
@@ -53,12 +51,17 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(AccountNotFoundException::new);
     }
 
+    @Override
+    public Account getAccountEntityById(UUID accountId) {
+        return accountRepository.findById(accountId).orElseThrow(AccountNotFoundException::new);
+    }
+
     private void publishInitialDepositToTopic(final AccountRequest accountRequest, final Account account,
                                               final Beneficiary beneficiary, final  String idempotencyKey) {
         if (accountRequest.getInitialDepositAmount() > 0) {
             final UUID eventId = UUID.randomUUID();
-            final var accountDepositRequest = new AccountDepositEvent(eventId, Instant.now(), account,
-                    beneficiary, accountRequest.getInitialDepositAmount(), idempotencyKey);
+            final var accountDepositRequest = new AccountDepositEvent(eventId, Instant.now(), account.getId(),
+                    beneficiary.getId(), accountRequest.getInitialDepositAmount(), idempotencyKey);
             externalDepositEventProducer.sendExternalDepositEvent(accountDepositRequest);
         }
     }

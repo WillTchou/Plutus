@@ -2,7 +2,10 @@ package com.project.plutus.kafka.consumer;
 
 import com.project.plutus.account.model.Account;
 import com.project.plutus.account.repository.AccountRepository;
+import com.project.plutus.account.service.AccountService;
+import com.project.plutus.beneficiary.BeneficiaryService;
 import com.project.plutus.beneficiary.model.Beneficiary;
+import com.project.plutus.exceptions.TransactionNotFoundException;
 import com.project.plutus.kafka.model.KafkaTopics;
 import com.project.plutus.kafka.model.LedgerEntryEvent;
 import com.project.plutus.ledger.model.LedgerEntry;
@@ -18,34 +21,39 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class LedgerEntryEventConsumer implements KafkaEventConsumer<LedgerEntryEvent>{
-    TransactionMapper transactionMapper;
-    LedgerEntryRepository ledgerEntryRepository;
-    TransactionRepository transactionRepository;
-    AccountRepository accountRepository;
+    private final TransactionMapper transactionMapper;
+    private final LedgerEntryRepository ledgerEntryRepository;
+    private final TransactionRepository transactionRepository;
+    private final AccountRepository accountRepository;
+    private final AccountService accountService;
+    private final BeneficiaryService beneficiaryService;
 
     @Override
     @KafkaListener(topics = KafkaTopics.LEDGER_ENTRY_EVENTS, groupId = "plutus-group")
     public void consumeMessage(final LedgerEntryEvent message) {
-        log.info("Received ledger entry event with id: {} for transaction id: {}", message.eventId(), message.transaction().getId());
-        var transaction = message.transaction();
+        log.info("Received ledger entry event with id: {} for transaction id: {}", message.eventId(), message.transactionId());
+        var transaction = transactionRepository.findById(message.transactionId())
+                .orElseThrow(TransactionNotFoundException::new);
         addNewLedgerEntry(transaction);
         updateSucceededTransaction(transaction);
-        var sourceAccount = message.sourceAccount();
-        var beneficiary = message.beneficiary();
+        var sourceAccount = accountService.getAccountEntityById(message.sourceAccountId());
+        var beneficiary = beneficiaryService.getBeneficiaryEntityById(message.beneficiaryId());
         if(!sourceAccount.equals(beneficiary.getAccount())) {
-            var beneficiaryAccount = beneficiary.getAccount();
-            Transaction beneficiaryTransaction = getBeneficiaryTransaction(transaction, beneficiary, sourceAccount);
-            addNewLedgerEntry(beneficiaryTransaction);
-            updateAccountBalance(beneficiaryAccount, beneficiaryTransaction);
+            updateBeneficiaryAccountTransaction(beneficiary, transaction, sourceAccount);
         }
         updateAccountBalance(sourceAccount, transaction);
-        log.info("Successfully published ledger entry event for transaction id: {}", message.transaction().getId());
+        log.info("Successfully published ledger entry event for transaction id: {}", message.transactionId());
+    }
+
+    private void updateBeneficiaryAccountTransaction(Beneficiary beneficiary, Transaction transaction, Account sourceAccount) {
+        var beneficiaryAccount = beneficiary.getAccount();
+        Transaction beneficiaryTransaction = getBeneficiaryTransaction(transaction, beneficiary, sourceAccount);
+        addNewLedgerEntry(beneficiaryTransaction);
+        updateAccountBalance(beneficiaryAccount, beneficiaryTransaction);
     }
 
     private @NonNull Transaction getBeneficiaryTransaction(Transaction transaction, Beneficiary beneficiary, Account sourceAccount) {
@@ -63,7 +71,8 @@ public class LedgerEntryEventConsumer implements KafkaEventConsumer<LedgerEntryE
     }
 
     private void updateAccountBalance(Account account, Transaction transaction) {
-        account.setBalance(ledgerEntryRepository.sumAmountByAccountId(account.getId()));
+        final double balance = ledgerEntryRepository.sumAmountByAccountId(account.getId());
+        account.setBalance(balance);
         accountRepository.save(account);
         log.info("Updated account balance for ledger entry with id: {}", transaction.getId());
     }
@@ -75,7 +84,6 @@ public class LedgerEntryEventConsumer implements KafkaEventConsumer<LedgerEntryE
 
     private void addNewLedgerEntry(Transaction transaction) {
         LedgerEntry ledgerEntry = transactionMapper.toLedgerEntry(transaction);
-        ledgerEntry.setCreatedAt(LocalDateTime.now());
         ledgerEntryRepository.save(ledgerEntry);
     }
 }

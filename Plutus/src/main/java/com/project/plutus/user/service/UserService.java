@@ -6,7 +6,7 @@ import com.project.plutus.user.model.UserDTO;
 import java.util.UUID;
 
 public interface UserService {
-    UserDTO getUserById(UUID userId);
+    UserDTO getAuthedUser(String userEmail);
 
     User getUserByEmail(String email);
 

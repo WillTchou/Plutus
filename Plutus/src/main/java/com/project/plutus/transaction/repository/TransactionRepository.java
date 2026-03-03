@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
+public interface TransactionRepository extends JpaRepository<Transaction, String> {
     @Query("SELECT t FROM Transaction t WHERE t.sourceAccount.id = :accountId OR t.beneficiary.account.id = :accountId")
     List<Transaction> findAllBySourceAccountIdOrBeneficiaryAccountId(UUID accountId);
 
