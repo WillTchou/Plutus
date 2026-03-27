@@ -3,7 +3,7 @@ package com.project.plutus.kafka.consumer;
 import com.project.plutus.account.model.Account;
 import com.project.plutus.account.repository.AccountRepository;
 import com.project.plutus.account.service.AccountService;
-import com.project.plutus.beneficiary.BeneficiaryService;
+import com.project.plutus.beneficiary.service.BeneficiaryService;
 import com.project.plutus.beneficiary.model.Beneficiary;
 import com.project.plutus.exceptions.TransactionNotFoundException;
 import com.project.plutus.kafka.model.KafkaTopics;
@@ -15,6 +15,7 @@ import com.project.plutus.transaction.model.Transaction;
 import com.project.plutus.transaction.model.TransactionStatus;
 import com.project.plutus.transaction.model.TransactionType;
 import com.project.plutus.transaction.repository.TransactionRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -34,6 +35,7 @@ public class LedgerEntryEventConsumer implements KafkaEventConsumer<LedgerEntryE
 
     @Override
     @KafkaListener(topics = KafkaTopics.LEDGER_ENTRY_EVENTS, groupId = "plutus-group")
+    @Transactional
     public void consumeMessage(final LedgerEntryEvent message) {
         log.info("Received ledger entry event with id: {} for transaction id: {}", message.eventId(), message.transactionId());
         var transaction = transactionRepository.findById(message.transactionId())
@@ -66,8 +68,7 @@ public class LedgerEntryEventConsumer implements KafkaEventConsumer<LedgerEntryE
                 .transactionType(TransactionType.CREDIT)
                 .status(TransactionStatus.SUCCEEDED)
                 .build();
-        transactionRepository.save(beneficiaryTransaction);
-        return beneficiaryTransaction;
+        return transactionRepository.save(beneficiaryTransaction);
     }
 
     private void updateAccountBalance(Account account, Transaction transaction) {

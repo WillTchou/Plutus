@@ -8,17 +8,15 @@ import com.project.plutus.transaction.model.Transaction;
 import com.project.plutus.user.model.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 import java.util.UUID;
 
 @Entity
 @Table(name = "accounts")
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -40,13 +38,14 @@ public class Account {
     private Double balance = 0.00;
     @Column
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private Currency currency = Currency.EUR;
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     @JsonIgnore
-    private LedgerEntry ledgerEntry;
+    private Set<LedgerEntry> ledgerEntry;
     @OneToMany(mappedBy = "sourceAccount", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<Transaction> transactionsSources;

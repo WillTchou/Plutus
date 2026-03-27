@@ -2,7 +2,8 @@ package com.project.plutus.kafka.consumer;
 
 import com.project.plutus.account.model.Account;
 import com.project.plutus.account.service.AccountService;
-import com.project.plutus.beneficiary.BeneficiaryService;
+import com.project.plutus.beneficiary.model.Beneficiary;
+import com.project.plutus.beneficiary.service.BeneficiaryService;
 import com.project.plutus.exceptions.NotEnoughAmountException;
 import com.project.plutus.kafka.model.KafkaTopics;
 import com.project.plutus.kafka.model.LedgerEntryEvent;
@@ -18,13 +19,15 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Optional;
 import java.util.UUID;
 
 @Component
 @Slf4j
-public class PaymentProcessorEventConsumer extends KafkaEventProducer<LedgerEntryEvent> implements KafkaEventConsumer<PaymentEvent>{
+public class PaymentProcessorEventConsumer extends KafkaEventProducer<LedgerEntryEvent> implements KafkaEventConsumer<PaymentEvent> {
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
     private final BeneficiaryService beneficiaryService;
@@ -38,23 +41,31 @@ public class PaymentProcessorEventConsumer extends KafkaEventProducer<LedgerEntr
     }
 
     @Override
+    @Transactional
     @KafkaListener(topics = KafkaTopics.PAYMENT_PROCESSOR_EVENTS, groupId = "plutus-group")
     public void consumeMessage(PaymentEvent message) {
         log.info("Received PaymentProcessorEvent with id: {}", message.eventId());
-        final Optional<Transaction> optionalTransaction = createTransactionFromPaymentEvent(message);
-        if(optionalTransaction.isEmpty()) return;
-        Transaction transaction = optionalTransaction.get();
-        final Account sourceAccount = transaction.getSourceAccount();
-        if(sourceAccount.getBalance() < transaction.getAmount()) {
-            handleNotEnoughBalanceForTransaction(sourceAccount, transaction);
-        }
-        publishLedgerEntryEvent(transaction, sourceAccount);
+        createTransactionFromPaymentEvent(message)
+                .ifPresent(transaction -> {
+                    final Account sourceAccount = transaction.getSourceAccount();
+                    if (sourceAccount.getBalance() < transaction.getAmount()) {
+                        handleNotEnoughBalanceForTransaction(sourceAccount, transaction);
+                    }
+                    publishLedgerEntryEvent(transaction, sourceAccount);
+                });
     }
 
     private void publishLedgerEntryEvent(Transaction transaction, Account sourceAccount) {
         LedgerEntryEvent ledgerEntryEvent = new LedgerEntryEvent(UUID.randomUUID(), transaction.getId(), sourceAccount.getId(), transaction.getBeneficiary().getId());
         log.info("Publishing ledger entry event to topic: {} for transaction id: {}", KafkaTopics.LEDGER_ENTRY_EVENTS, transaction.getId());
-        sendMessage(KafkaTopics.LEDGER_ENTRY_EVENTS, ledgerEntryEvent);
+        if(TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendMessage(KafkaTopics.LEDGER_ENTRY_EVENTS, ledgerEntryEvent);
+                }
+            });
+        }
     }
 
     private void handleNotEnoughBalanceForTransaction(Account sourceAccount, Transaction transaction) {
@@ -66,18 +77,10 @@ public class PaymentProcessorEventConsumer extends KafkaEventProducer<LedgerEntr
                 sourceAccount.getId(), transaction.getId()));
     }
 
-    @Transactional
     private Optional<Transaction> createTransactionFromPaymentEvent(PaymentEvent paymentEvent) {
         final var beneficiary = beneficiaryService.getBeneficiaryEntityById(paymentEvent.beneficiaryId());
         final var sourceAccount = accountService.getAccountEntityById(paymentEvent.sourceAccountId());
-        Transaction transaction = Transaction.builder()
-                .amount(paymentEvent.amount())
-                .beneficiary(beneficiary)
-                .sourceAccount(sourceAccount)
-                .motive(paymentEvent.motive())
-                .idempotencyKey(paymentEvent.idempotencyKey())
-                .transactionType(TransactionType.DEBIT)
-                .build();
+        Transaction transaction = getTransaction(paymentEvent, beneficiary, sourceAccount);
         try {
             transaction = transactionRepository.save(transaction);
             log.info("Created transaction with id: {} for payment event with id: {}", transaction.getId(), paymentEvent.eventId());
@@ -87,5 +90,16 @@ public class PaymentProcessorEventConsumer extends KafkaEventProducer<LedgerEntr
                     paymentEvent.idempotencyKey(), paymentEvent.eventId());
             return Optional.empty();
         }
+    }
+
+    private static Transaction getTransaction(PaymentEvent paymentEvent, Beneficiary beneficiary, Account sourceAccount) {
+        return Transaction.builder()
+                .amount(paymentEvent.amount())
+                .beneficiary(beneficiary)
+                .sourceAccount(sourceAccount)
+                .motive(paymentEvent.motive())
+                .idempotencyKey(paymentEvent.idempotencyKey())
+                .transactionType(TransactionType.DEBIT)
+                .build();
     }
 }

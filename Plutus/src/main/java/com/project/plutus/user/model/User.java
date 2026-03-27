@@ -52,7 +52,7 @@ public class User implements UserDetails {
     private String password;
     @Column
     @Enumerated(EnumType.STRING)
-    private Role role = Role.USER;
+    private Role role = Role.ROLE_USER;
     @Column
     @Enumerated(EnumType.STRING)
     private KycState kycState = KycState.NOT_VERIFIED;
@@ -86,7 +86,7 @@ public class User implements UserDetails {
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
+    public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()), new SimpleGrantedAuthority(kycState.name()));
     }
 

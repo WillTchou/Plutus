@@ -9,8 +9,7 @@ import lombok.Value;
 @Value
 @Builder
 @AllArgsConstructor
-public class AccountRequest {
+public class BeneficiaryRequest {
     String holderName;
     String iban;
-    double initialDepositAmount;
 }

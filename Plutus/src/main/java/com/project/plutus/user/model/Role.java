@@ -1,6 +1,6 @@
 package com.project.plutus.user.model;
 
 public enum Role {
-    ADMIN,
-    USER,
+    ROLE_ADMIN,
+    ROLE_USER,
 }

@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -43,7 +44,7 @@ public class AuthenticationService {
     private User buildUserWithRegisterRequest(final RegisterRequest registerRequest) {
         final String registerRequestPassword = registerRequest.getPassword();
         return new User(registerRequest.getFirstname(), registerRequest.getLastname(), registerRequest.getBirthdate(),
-                registerRequest.getEmail(), passwordEncoder.encode(registerRequestPassword), Role.USER);
+                registerRequest.getEmail(), Objects.requireNonNull(passwordEncoder.encode(registerRequestPassword)), Role.ROLE_USER);
     }
 
     private AuthenticationResponse buildAuthenticationResponse(final String jwtToken, final UUID userId) {

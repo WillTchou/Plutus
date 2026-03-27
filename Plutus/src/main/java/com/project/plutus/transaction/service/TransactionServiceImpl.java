@@ -2,7 +2,7 @@ package com.project.plutus.transaction.service;
 
 import com.project.plutus.account.model.Account;
 import com.project.plutus.account.repository.AccountRepository;
-import com.project.plutus.beneficiary.BeneficiaryService;
+import com.project.plutus.beneficiary.service.BeneficiaryService;
 import com.project.plutus.beneficiary.model.Beneficiary;
 import com.project.plutus.exceptions.AccountNotFoundException;
 import com.project.plutus.exceptions.TransactionNotFoundException;
@@ -62,8 +62,8 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional
-    public void createTransaction(UUID accountId, String idempotencyKey, String userEmail,
-                                  TransactionRequest transactionRequest) {
+    public void createTransaction(final UUID accountId, final String idempotencyKey, final String userEmail,
+                                  final TransactionRequest transactionRequest) {
         final Account sourceAccount = accountRepository.findByIdAndUserEmail(accountId, userEmail)
                 .orElseThrow(AccountNotFoundException::new);
         final Beneficiary beneficiary = beneficiaryService.getBeneficiaryEntityById(transactionRequest.getBeneficiaryId());

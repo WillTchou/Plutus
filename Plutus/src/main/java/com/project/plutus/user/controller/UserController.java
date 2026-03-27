@@ -23,7 +23,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getAuthedUser(userEmail));
     }
 
-    @PostMapping
+    @PostMapping("/verify")
     public ResponseEntity<Void> verifyUser(final Authentication authentication) {
         final String userEmail = authentication.getName();
         userService.verifyUser(userEmail);

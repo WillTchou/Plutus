@@ -5,16 +5,14 @@ import com.project.plutus.account.model.Account;
 import com.project.plutus.beneficiary.model.Beneficiary;
 import com.project.plutus.model.Currency;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions")
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -43,10 +41,10 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private TransactionStatus status = TransactionStatus.PENDING;
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "source_account_id", referencedColumnName = "id")
     private Account sourceAccount;
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "beneficiary_id", referencedColumnName = "id")
     private Beneficiary beneficiary;
 }

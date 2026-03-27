@@ -14,6 +14,12 @@ public interface TransactionMapper {
     @Mapping(source = "transactionType", target = "type")
     TransactionDTO toTransactionDTO(Transaction transaction);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(source = "transaction", target = "account", qualifiedByName = "mapAccount")
+    @Mapping(source = "transaction", target = "amount", qualifiedByName = "mapAmount")
+    LedgerEntry toLedgerEntry(Transaction transaction);
+
     @Named("mapAmount")
     default Double mapAmount(final Transaction transaction) {
         Double amount = transaction.getAmount();
@@ -30,12 +36,6 @@ public interface TransactionMapper {
             default -> throw new IllegalArgumentException("Unknown transaction type: " + transaction.getTransactionType());
         }
     }
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(source = "transaction", target = "account", qualifiedByName = "mapAccount")
-    @Mapping(source = "transaction", target = "amount", qualifiedByName = "mapAmount")
-    LedgerEntry toLedgerEntry(Transaction transaction);
 
     @Named("mapAccount")
     default Account mapAccount(final Transaction transaction) {

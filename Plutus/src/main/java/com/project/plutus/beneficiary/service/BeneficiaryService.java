@@ -1,4 +1,4 @@
-package com.project.plutus.beneficiary;
+package com.project.plutus.beneficiary.service;
 
 import com.project.plutus.beneficiary.model.Beneficiary;
 

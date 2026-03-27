@@ -1,7 +1,9 @@
 package com.project.plutus.kafka.consumer;
 
+import com.project.plutus.account.model.Account;
 import com.project.plutus.account.service.AccountService;
-import com.project.plutus.beneficiary.BeneficiaryService;
+import com.project.plutus.beneficiary.model.Beneficiary;
+import com.project.plutus.beneficiary.service.BeneficiaryService;
 import com.project.plutus.exceptions.NotEnoughAmountException;
 import com.project.plutus.kafka.model.AccountDepositEvent;
 import com.project.plutus.kafka.model.KafkaTopics;
@@ -39,6 +41,7 @@ public class ExternalDepositEventConsumer extends KafkaEventProducer<LedgerEntry
     }
 
     @Override
+    @Transactional
     @KafkaListener(topics = KafkaTopics.EXTERNAL_DEPOSIT_EVENTS, groupId = "plutus-group")
     public void consumeMessage(AccountDepositEvent message) {
         log.info("Received external deposit event with id: {}", message.eventId());
@@ -63,19 +66,10 @@ public class ExternalDepositEventConsumer extends KafkaEventProducer<LedgerEntry
             this.sendMessage(KafkaTopics.LEDGER_ENTRY_EVENTS, ledgerEntryEvent);
     }
 
-    @Transactional
     private Optional<Transaction> createExternalDepositTransaction(final AccountDepositEvent message) {
         final var beneficiary = beneficiaryService.getBeneficiaryEntityById(message.beneficiaryId());
         final var sourceAccount = accountService.getAccountEntityById(message.sourceAccountId());
-        Transaction transaction = Transaction.builder()
-                .beneficiary(beneficiary)
-                .sourceAccount(sourceAccount)
-                .motive("External deposit")
-                .amount(message.amount())
-                .createdAt(LocalDateTime.now())
-                .transactionType(TransactionType.CREDIT)
-                .idempotencyKey(message.idempotencyKey())
-                .build();
+        Transaction transaction = getTransaction(message, beneficiary, sourceAccount);
         try {
             transaction = transactionRepository.save(transaction);
             log.info("Created transaction with id: {} for payment event with id: {}", transaction.getId(), message.eventId());
@@ -85,5 +79,17 @@ public class ExternalDepositEventConsumer extends KafkaEventProducer<LedgerEntry
                     message.idempotencyKey(), message.eventId());
             return Optional.empty();
         }
+    }
+
+    private static Transaction getTransaction(AccountDepositEvent message, Beneficiary beneficiary, Account sourceAccount) {
+        return Transaction.builder()
+                .beneficiary(beneficiary)
+                .sourceAccount(sourceAccount)
+                .motive("External deposit")
+                .amount(message.amount())
+                .createdAt(LocalDateTime.now())
+                .transactionType(TransactionType.CREDIT)
+                .idempotencyKey(message.idempotencyKey())
+                .build();
     }
 }
