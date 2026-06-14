@@ -27,7 +27,7 @@ public class Account {
     private UUID id;
     @Column(nullable = false)
     private String holderName;
-    @Column
+    @Column(unique = true, nullable = false)
     @Pattern(regexp = "^[A-Z]{2}\\d{2}[A-Z0-9]{1,30}$", message = "Invalid IBAN format")
     private String iban;
     @Column

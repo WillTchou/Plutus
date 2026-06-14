@@ -25,7 +25,7 @@ public class Beneficiary {
     private UUID id;
     @Column(nullable = false)
     private String holderName;
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String iban;
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "account_id", nullable = false)

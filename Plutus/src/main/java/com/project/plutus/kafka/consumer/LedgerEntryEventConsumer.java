@@ -52,7 +52,8 @@ public class LedgerEntryEventConsumer implements KafkaEventConsumer<LedgerEntryE
     }
 
     private void updateBeneficiaryAccountTransaction(Beneficiary beneficiary, Transaction transaction, Account sourceAccount) {
-        var beneficiaryAccount = beneficiary.getAccount();
+        final Account beneficiaryAccount = accountRepository.findByIban(beneficiary.getIban())
+                .orElseThrow(() -> new IllegalStateException("Beneficiary account not found for IBAN: " + beneficiary.getIban()));
         Transaction beneficiaryTransaction = getBeneficiaryTransaction(transaction, beneficiary, sourceAccount);
         addNewLedgerEntry(beneficiaryTransaction);
         updateAccountBalance(beneficiaryAccount, beneficiaryTransaction);

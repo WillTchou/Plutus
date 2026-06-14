@@ -38,14 +38,4 @@ public class AccountController {
         final String userEmail = authentication.getName();
         return ResponseEntity.ok(accountService.getAccountById(accountId, userEmail));
     }
-
-    @PostMapping(path = "/beneficiary")
-    @PreAuthorize("hasRole('USER') && hasAuthority('VERIFIED')")
-    public ResponseEntity<UUID> addBeneficiary(@RequestBody final BeneficiaryRequest beneficiaryRequest,
-                                               @RequestHeader UUID accountId,
-                                               final Authentication authentication) {
-        final String userEmail = authentication.getName();
-        accountService.addBeneficiary(userEmail, accountId, beneficiaryRequest);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
 }

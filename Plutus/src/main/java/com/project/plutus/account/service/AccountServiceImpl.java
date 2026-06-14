@@ -54,18 +54,6 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.findById(accountId).orElseThrow(AccountNotFoundException::new);
     }
 
-    @Override
-    public void addBeneficiary(String userEmail, UUID accountId, BeneficiaryRequest beneficiaryRequest) {
-        final var account = accountRepository.findByIdAndUserEmail(accountId, userEmail)
-                .orElseThrow(AccountNotFoundException::new);
-        final var beneficiary = Beneficiary.builder()
-                .account(account)
-                .holderName(beneficiaryRequest.getHolderName())
-                .iban(beneficiaryRequest.getIban())
-                .build();
-        beneficiaryRepository.save(beneficiary);
-    }
-
     private static Beneficiary getBeneficiary(AccountRequest accountRequest, Account savedAccount) {
         return Beneficiary.builder()
                 .account(savedAccount)

@@ -68,21 +68,4 @@ class AccountControllerTest {
         assertEquals(dto, response.getBody());
         verify(accountService).getAccountById(accountId, EMAIL);
     }
-
-    @Test
-    void addBeneficiary_returnsCreated() {
-        UUID accountId = UUID.randomUUID();
-        BeneficiaryRequest request = BeneficiaryRequest.builder()
-                .holderName("John Beneficiary")
-                .iban(IBAN)
-                .build();
-
-        when(authentication.getName()).thenReturn(EMAIL);
-
-        ResponseEntity<UUID> response = accountController.addBeneficiary(request, accountId, authentication);
-
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertThat(response.getBody()).isNull();
-        verify(accountService).addBeneficiary(EMAIL, accountId, request);
-    }
 }

@@ -11,5 +11,4 @@ public interface AccountService {
     UUID createAccountForUser(String userEmail, AccountRequest accountRequest, String idempotencyKey);
     AccountDTO getAccountById(UUID accountId, String userEmail);
     Account getAccountEntityById(UUID accountId);
-    void addBeneficiary(String userEmail, UUID accountId, BeneficiaryRequest beneficiaryRequest);
 }

@@ -25,7 +25,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -124,40 +125,5 @@ class AccountServiceImplTest {
         when(accountRepository.findByIdAndUserEmail(accountId, EMAIL)).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> accountService.getAccountById(accountId, EMAIL));
-    }
-
-    @Test
-    void addBeneficiary_savesBeneficiary_whenAccountOwnedByUser() {
-        UUID accountId = UUID.randomUUID();
-        Account account = Account.builder().id(accountId).build();
-        BeneficiaryRequest request = BeneficiaryRequest.builder()
-                .holderName("John Beneficiary")
-                .iban(IBAN)
-                .build();
-
-        when(accountRepository.findByIdAndUserEmail(accountId, EMAIL)).thenReturn(Optional.of(account));
-
-        accountService.addBeneficiary(EMAIL, accountId, request);
-
-        ArgumentCaptor<Beneficiary> captor = ArgumentCaptor.forClass(Beneficiary.class);
-        verify(beneficiaryRepository).save(captor.capture());
-        Beneficiary saved = captor.getValue();
-        assertEquals(account, saved.getAccount());
-        assertEquals("John Beneficiary", saved.getHolderName());
-        assertEquals(IBAN, saved.getIban());
-    }
-
-    @Test
-    void addBeneficiary_throws_whenAccountMissing() {
-        UUID accountId = UUID.randomUUID();
-        BeneficiaryRequest request = BeneficiaryRequest.builder()
-                .holderName("John Beneficiary")
-                .iban(IBAN)
-                .build();
-
-        when(accountRepository.findByIdAndUserEmail(accountId, EMAIL)).thenReturn(Optional.empty());
-
-        assertThrows(AccountNotFoundException.class, () -> accountService.addBeneficiary(EMAIL, accountId, request));
-        verify(beneficiaryRepository, never()).save(any(Beneficiary.class));
     }
 }
